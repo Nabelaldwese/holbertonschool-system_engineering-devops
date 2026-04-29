@@ -1,0 +1,60 @@
+https://imgur.com/your-task1-screenshot-link
+
+Distributed web infrastructure (three servers) for `www.foobar.com`:
+
+- Domain: `foobar.com`
+- DNS:
+  - `www` is a `CNAME` record pointing to `foobar.com`
+  - `foobar.com` is an `A` record pointing to the load balancer public IP
+- Server 1:
+  - `HAproxy` (load balancer)
+- Server 2:
+  - `Nginx` (web server)
+  - Application server
+  - Application files (code base)
+  - `MySQL` Primary
+- Server 3:
+  - `Nginx` (web server)
+  - Application server
+  - Application files (code base)
+  - `MySQL` Replica
+
+Why each additional element is added:
+- Load balancer (`HAproxy`): Distributes traffic across two application servers to improve availability and handle more requests.
+- Second application server: Removes single-server dependency and supports horizontal scaling.
+- Replica database: Adds data redundancy and allows read scaling/failover options.
+
+Load balancer distribution algorithm:
+- Algorithm: `round-robin`.
+- How it works: `HAproxy` sends request 1 to server A, request 2 to server B, then repeats the cycle to balance load evenly.
+
+Load balancer setup type:
+- This is an **Active-Active** setup for web/app servers.
+- Active-Active: Both backend servers handle traffic at the same time.
+- Active-Passive: One server handles traffic while the standby server waits for failover.
+
+Primary-Replica (Master-Slave) database cluster:
+- Primary node accepts write operations (`INSERT`, `UPDATE`, `DELETE`) and records changes in its binary log.
+- Replica node asynchronously copies and replays those changes from the Primary to stay updated.
+
+Primary vs Replica from application perspective:
+- Primary: Used for write operations and can also handle reads.
+- Replica: Usually used for read-only queries and backup/reporting; it should not be used for direct writes by the app.
+
+Request flow:
+1. User enters `www.foobar.com`.
+2. DNS resolves to the load balancer IP.
+3. `HAproxy` receives the request and forwards it using round-robin to Server 2 or Server 3.
+4. `Nginx` serves static content and proxies dynamic requests to the application server.
+5. Application server processes logic and interacts with database (writes to Primary; reads from Primary/Replica depending on design).
+6. Response returns to the user through the load balancer.
+
+Issues with this infrastructure:
+- Remaining SPOF:
+  - The load balancer is still a single point of failure (only one `HAproxy`).
+  - The Primary database is a single write point of failure.
+- Security issues:
+  - No firewall to restrict traffic between tiers.
+  - No HTTPS/TLS, so traffic can be intercepted.
+- No monitoring:
+  - No metrics/alerts/logging stack to detect failures, latency spikes, or resource exhaustion.
