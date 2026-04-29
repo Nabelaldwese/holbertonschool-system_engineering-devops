@@ -1,0 +1,75 @@
+https://imgur.com/your-task2-screenshot-link
+
+Secured and monitored three-server web infrastructure for `www.foobar.com`:
+
+- Domain: `foobar.com`
+- DNS:
+  - `www` is a `CNAME` record pointing to `foobar.com`
+  - `foobar.com` is an `A` record pointing to the load balancer public IP
+- Server 1:
+  - `HAproxy` (load balancer)
+  - Firewall
+  - SSL certificate for `www.foobar.com` (HTTPS termination)
+  - Monitoring client/agent
+- Server 2:
+  - `Nginx` (web server)
+  - Application server
+  - Application files (code base)
+  - `MySQL` Primary
+  - Firewall
+  - Monitoring client/agent
+- Server 3:
+  - `Nginx` (web server)
+  - Application server
+  - Application files (code base)
+  - `MySQL` Replica
+  - Firewall
+  - Monitoring client/agent
+
+Why each additional element is added:
+- 3 Firewalls: Restrict inbound and outbound traffic per server and reduce attack surface.
+- SSL certificate: Encrypts traffic between clients and infrastructure for confidentiality and integrity.
+- 3 Monitoring clients: Collect metrics/logs/events from each server and send them to a central monitoring platform.
+
+What firewalls are for:
+- Enforcing network access rules (allowed ports/protocols/IP ranges).
+- Blocking unauthorized connections between internet, load balancer, app tier, and database tier.
+
+Why traffic is served over HTTPS:
+- Encrypts data in transit to prevent sniffing and man-in-the-middle attacks.
+- Verifies server identity with certificates.
+- Required for secure authentication, sessions, and modern browser trust.
+
+What monitoring is used for:
+- Detecting outages, high latency, resource saturation, and abnormal behavior.
+- Triggering alerts so incidents are handled quickly.
+- Supporting troubleshooting and capacity planning.
+
+How the monitoring tool collects data:
+- Agent-based collection: each monitoring client reads system/application metrics and logs locally.
+- The agent periodically pushes telemetry to the monitoring backend (for example, Sumologic).
+
+How to monitor web server QPS:
+- Enable request metrics on `Nginx` (for example via access logs, status module, or exporter).
+- Configure the monitoring agent to scrape/collect request count.
+- Build a dashboard/query calculating QPS (requests per second).
+- Set alerts on QPS anomalies (unexpected spikes or drops).
+
+Request flow:
+1. User requests `https://www.foobar.com`.
+2. DNS resolves to the load balancer IP.
+3. Client establishes TLS session with `HAproxy` using the SSL certificate.
+4. `HAproxy` forwards traffic to backend web/app servers.
+5. Application processes logic and accesses database (writes to Primary, reads can use Replica).
+6. Monitoring agents on all three servers continuously report health/metrics/logs.
+
+Issues with this infrastructure:
+- SSL termination at load balancer:
+  - Traffic from load balancer to backend may be unencrypted if not re-encrypted internally.
+  - Internal network compromise could expose sensitive data.
+- Only one MySQL write node:
+  - Primary is a write bottleneck and a write SPOF.
+  - Primary failure can stop write operations until failover/promotion is completed.
+- Same components on all servers:
+  - Mixed roles increase operational complexity and resource contention.
+  - Harder isolation, scaling, and security policy management between web/app/database layers.
