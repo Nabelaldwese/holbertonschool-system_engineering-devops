@@ -1,0 +1,44 @@
+https://imgur.com/your-task3-screenshot-link
+
+Scale-up web infrastructure for `www.foobar.com`:
+
+Goal:
+- Improve availability and scalability.
+- Eliminate mixed roles by splitting web, application, and database components onto dedicated servers.
+
+Infrastructure:
+- DNS:
+  - `www` is a `CNAME` record pointing to `foobar.com`
+  - `foobar.com` points to the load balancer public IP
+- Load balancers:
+  - `HAproxy-LB1`
+  - `HAproxy-LB2`
+  - Both are configured as a cluster (high availability pair)
+- Web tier:
+  - Dedicated web server(s) running `Nginx`
+- Application tier:
+  - Dedicated application server(s) running the app logic
+- Database tier:
+  - Dedicated database server(s) running `MySQL` (Primary-Replica if required by design)
+
+What was added and why:
+- One additional server:
+  - Provides extra capacity and enables role separation.
+  - Reduces resource contention between services.
+- One additional load balancer (`HAproxy`) in cluster with the existing one:
+  - Removes the load balancer SPOF.
+  - Ensures failover if one load balancer goes down.
+- Component split (web/app/database on separate servers):
+  - Web servers focus on static content, TLS handling, and reverse proxy duties.
+  - App servers focus on business logic execution.
+  - Database servers focus on persistence and query performance.
+  - Each layer can scale independently based on bottlenecks.
+  - Better security boundaries and easier operations/troubleshooting.
+
+Request flow (high level):
+1. User requests `www.foobar.com`.
+2. Traffic reaches the HA load balancer cluster.
+3. Active load balancer routes to the web tier.
+4. Web tier forwards dynamic requests to application tier.
+5. Application tier reads/writes data through the database tier.
+6. Response returns back through web tier and load balancer to the user.
