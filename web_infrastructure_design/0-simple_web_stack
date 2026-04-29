@@ -1,0 +1,35 @@
+https://imgur.com/your-screenshot-link
+
+Simple web stack (one server) for `www.foobar.com`:
+
+- Domain: `foobar.com`
+- DNS record: `www` is a `CNAME` record that points to `foobar.com`
+- `foobar.com` points to the server public IP `8.8.8.8` using an `A` record
+- One server hosts:
+  - Web server: `Nginx`
+  - Application server
+  - Application files (code base)
+  - Database: `MySQL`
+
+Request flow:
+1. A user types `www.foobar.com` in the browser.
+2. DNS resolves the name to `8.8.8.8`.
+3. The browser sends an HTTP/HTTPS request over TCP/IP to the server.
+4. `Nginx` receives the request and forwards dynamic requests to the application server.
+5. The application server runs the application code.
+6. The application reads/writes data in `MySQL`.
+7. The response goes back through `Nginx` to the user browser.
+
+Component roles:
+- Server: A physical or virtual machine that provides services/resources over a network.
+- Domain name: A human-readable name used to reach a server by DNS resolution.
+- `www` record type: `CNAME` (in this setup).
+- Web server (`Nginx`): Handles incoming HTTP/HTTPS requests, serves static files, and proxies to the app server.
+- Application server: Executes business logic and generates dynamic content.
+- Database (`MySQL`): Stores and retrieves persistent application data.
+- Communication protocol: HTTP/HTTPS over TCP/IP.
+
+Main issues with this infrastructure:
+- SPOF (Single Point of Failure): If the only server fails, the whole website is down.
+- Downtime during maintenance/deployment: Restarting services on the single server can interrupt users.
+- No horizontal scaling: One server cannot handle unlimited traffic growth.
